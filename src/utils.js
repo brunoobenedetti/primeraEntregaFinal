@@ -1,75 +1,88 @@
-import {promises as fs} from "fs"
+import { promises as fs } from 'fs';
 
-class ProductManager {
-    constructor(path) {
-        this.path = path;
-    };
+export default class ProductManager {
+    constructor() {
+    this.path = "./products.json" 
+}
 
-    async addProduct(product) {
-        const products = await this.getProducts();
-        const { title, description, price, thumbnail, code, stock, status } = product;
-        if (!title || !description || !price || !code || !stock || !status) {
-            throw new Error("Todos los campos son obligatorios.");
-        }
-        const id = this.creoID();   
-        const newProduct = { id, title, description, price, thumbnail, code, stock, status };
-        products.push(newProduct);
-        await this.saveProductsToFile(products);
-    };
-
-    async getProducts() {
+async getProducts() {
         try {
-            const content = await fs.readFile(this.path, "utf-8");
-            return JSON.parse(content);
+        let archivo = await fs.readFile(this.path,"utf-8");
+        return archivo
         } catch (error) {
-            return [];
+        console.error('Error', error.message)
         }
-    };
+}
 
-    async getProductById(id) {
-        const products = await this.getProducts();
-        const product = products.find((p) => p.id === id);
-        if (!product) {
-            throw new Error("Producto no encontrado");
-        } else {
-            console.log("Producto encontrado", product);
+async addProduct(addProduct) {
+        if (!addProduct) {
+            console.log("Error, data required")
+    } else {
+        let archivo = await fs.readFile(this.path,"utf-8")
+        let products = JSON.parse(archivo)
+    let product = products.find(prod => prod.code === addProduct.code) 
+        if (product) {
+            return console.log("invalid code, existing")
+    } else {
+        addProduct.id= products.length+1
+        products.push(addProduct)
+        await fs.writeFile(this.path, JSON.stringify(products, null, 2), "utf-8")
+        console.log("Product add")
         }
-    };
-
-    async updateProduct(id, updatedProduct) {
-        const products = await this.getProducts();
-        const index = products.findIndex((p) => p.id === id);
-        if (index !== -1) {
-            products[index] = { ...products[index], ...updatedProduct, id };
-            await this.saveProductsToFile(products);
-            console.log("Producto actualizado correctamente", products[index]);
-        } else {
-            console.log(`Producto no encontrado, id: ${id}`);
-        }
-    };
-    async deleteProduct(id) {
-        const products = await this.getProducts();
-        const index = products.findIndex((p) => p.id === id);
-        if (index !== -1) {
-            products.splice(index, 1);
-            await this.saveProductsToFile(products);
-            console.log("Se ha borrado correctamente el producto");
-        } else {
-            console.log("No se ha podido borrar el producto");
-        }
-    };
-
-    async saveProductsToFile(path, products) {
-        const content = JSON.stringify(products, null,"\t");
-        await fs.writeFile(path, content, "utf - 8");
-    };
-    creoID(products) {
-        let id;
-        do {
-            id = Math.floor(Math.random() * 100000);
-        } while (products.find(p => p.id === id));
-        return id;
     }
-};
+}
+async getProductById(id) {
+    if (id) { 
+        let archivo = await fs.readFile(this.path,"utf-8")
+        let products = JSON.parse(archivo)
+        let product = products.find(prod => prod.id === parseInt(id))
+        return product ? product : ""
+    } else {
+        console.log("Error, required ID")
+    }
+}
 
-export default ProductManager;
+async deleteProduct(id) {
+    if (id) {
+        let archivo = await fs.readFile(this.path,"utf-8")
+        let products = JSON.parse(archivo)
+        const index = products.findIndex((product) => product.id === parseInt(id));
+    if (index !== -1) {
+        products.splice(index, 1);
+        await fs.writeFile(
+        this.path,
+        JSON.stringify(products, null, 2),
+        "utf-8"
+        );
+    console.log("Product deleted by ID:",id)
+    } else {
+    console.log("invalid or no found ID:",id)
+    }
+    } else {
+        console.log("Error, required ID")
+    }
+    }
+
+async updateProduct(id, updates) {
+        if (!id || !updates){
+        console.log("Error, data required")
+    } else {
+        let archivo = await fs.readFile(this.path,"utf-8")
+        let products = JSON.parse(archivo)
+        let product = products.find(prod => prod.id === parseInt(id))
+    if (product) {
+    let productsUpdated = products.map((ele)=>{
+        if(ele.id==id) {
+            updates.id=id
+            return updates
+        } else {
+            return ele
+        }
+        })
+        await fs.writeFile(this.path, JSON.stringify(productsUpdated, null, 2), "utf-8")
+    } else {
+        console.log("ID no found:",id)
+    }
+        }
+    }
+}
