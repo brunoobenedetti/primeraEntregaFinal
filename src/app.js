@@ -1,22 +1,27 @@
 import express from 'express';
-import productRouter from './router/productsRouter.js';
-import cartRouter from './router/carts.js';
+import handlebars from 'express-handlebars';
+import path from 'path';
 
+
+import indexRouter from './router/indexRouter.js';
+import { __dirname } from './utils.js';
 
 const app = express();
-const port = 8080;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, '../public')));
 
+app.engine('handlebars', handlebars.engine());
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'handlebars');
 
-app.use('/api/products', productRouter);
-app.use('/api/carts', cartRouter);
+app.use('/', indexRouter);
 
-app.get('/', (req, res) => {
-    res.send('Hola bienvenido a la tienda, utiliza "api/products" para ver todos los productos o "/products/id" para ver un producto especifico')
+app.use((error, req, res, next) => {
+    const message = `Error: ${error.message}`;
+    console.log(message);
+    res.status(500).json({ status: 'error', message });
 });
 
-app.listen(port, () => {
-    console.log("servidor escuchando desde el puerto 8080 http://localhost:8080/products");
-});
+export default app;

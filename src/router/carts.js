@@ -1,41 +1,40 @@
 import { Router } from "express";
-// import CartManager from '../src/cartManager.js';
 
-// const cartManager= new CartManager();
+import CartManager from '../CartManager.js';
+const cartManager = new CartManager();
 
 const router = Router();
 
-const db = {}; 
-
-router.post('/', (req, res) => {
-    const cartId = cartId.length+1; 
-    db[cartId] = { id: cartId, products: [] };
-    res.status(201).json(db[cartId]);
+router.get('/', async (req, res) => {
+    const carts = JSON.parse(await cartManager.getCarts());
+    return res.status(200).json(carts);
+}); 
+    router.post('/', async (req, res) => {
+    await cartManager.addCart(req.body)
+    res.status(201).json(req.body); //
 });
-
-router.get('/:cid', (req, res) => {
-    const cart = db[req.params.cid]; 
-    if (!cart) {
-        res.status(404).json({ message: 'Carrito no encontrado' }); 
-    } else {
-        res.json(cart.products);
-    }
+router.get('/:cid', async (req, res) => {
+    const carts = JSON.parse(await cartManager.getCarts());
+    const cart = carts.find(cart => cart.id === req.params.cid)
+    return cart? res.status(200).json(cart): res.status(404).json({ error: 'Cart not found' });
 });
-
-router.post('/:cid/product/:pid', (req, res) => {
-    const cart = db[req.params.pid]; 
+router.post('/:cid/product/:pid', async (req, res) => {
+    const carts = JSON.parse(await cartManager.getCarts());
+    const cart = carts.find(cart => cart.id === req.params.cid)
     if (!cart) {
-        res.status(404).json({ message: 'Carrito no encontrado' }); 
+        res.status(404).json({ message: 'cart no found' }); 
     } else {
         const productId = req.params.pid;
         const product = { id: productId, quantity: 1 }; 
         const existingProduct = cart.products.find(p => p.id === productId); 
     if (existingProduct) {
-        existingProduct.quantity++; 
-        cart.products.push(product); 
+        existingProduct.quantity++;
+    } else {
+        cart.products.push(product);
     }
-        res.json(cart.products); 
-}
+        res.json(cart.products);
+        await cartManager.updateCart(req.params.cid, cart);
+    }
 });
 
 export default router;
